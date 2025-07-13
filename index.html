@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نظام تسجيل الحضور - شركة الزهراني | Al-Zahrani Attendance System</title>
+    <style>
+        :root {
+            --primary: #1e88e5; /* تغيير اللون الأساسي إلى أزرق */
+            --dark: #1a1a1a;
+            --light: #ffffff; /* تغيير اللون الفاتح إلى أبيض */
+            --secondary: #f5f5f5;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--secondary);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 100%;
+            width: 100%;
+            padding: 15px;
+            flex: 1;
+        }
+        header {
+            background-color: var(--primary);
+            padding: 15px 0;
+            text-align: center;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .logo-container {
+            background-color: white;
+            border-radius: 50%;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .logo {
+            height: 60px;
+        }
+        h1 {
+            margin: 0;
+            color: white;
+            font-size: 1.5rem;
+        }
+        .subtitle {
+            color: white;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        .employee-section, .admin-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            border: none;
+        }
+        button:hover, button:focus {
+            background-color: #1565c0;
+        }
+        #cameraContainer {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 15px;
+            text-align: center;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        #videoElement {
+            width: 100%;
+            max-height: 60vh;
+            display: none;
+            border-radius: 4px;
+        }
+        #canvas {
+            display: none;
+        }
+        .attendance-list {
+            margin-top: 15px;
+        }
+        .attendance-item {
+            background-color: #f9f9f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid #e0e0e0;
+        }
+        .attendance-item:hover {
+            background-color: #f0f0f0;
+        }
+        .attendance-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .filters input {
+            flex: 1;
+            min-width: 120px;
+        }
+        .loading {
+            text-align: center;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .permission-error {
+            color: #d32f2f;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(211, 47, 47, 0.1);
+            border-radius: 4px;
+        }
+        #adminLoginLink {
+            display: inline-block;
+            padding: 10px 15px;
+            background: var(--primary);
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        #enableCameraBtn {
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 10px auto;
+            display: block;
+            cursor: pointer;
+        }
+        /* نافذة عرض التفاصيل */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            overflow: auto;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            animation: modalopen 0.3s;
+        }
+        @keyframes modalopen {
+            from {opacity: 0; transform: translateY(-50px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        .close-modal {
+            color: #aaa;
+            float: left;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .modal-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .modal-details {
+            margin-top: 15px;
+        }
+        .modal-details p {
+            margin: 8px 0;
+        }
+        .language-switch {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            border: 1px solid var(--primary);
+        }
+        .location-status {
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .in-office {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .out-office {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        @media (max-width: 480px) {
+            .attendance-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .attendance-item img {
+                margin-top: 10px;
+                width: 80px;
+                height: 80px;
+            }
+            #cameraContainer {
+                max-width: 100%;
+            }
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="language-switch" id="languageSwitch">EN</div>
+
+    <header>
+        <div class="logo-container">
+            <img src="https://i.ibb.co/Pz9wt7MD/12za.png" 
+                 alt="شعار شركة الزهراني" 
+                 class="logo"
+                 crossorigin="anonymous">
+        </div>
+        <h1>نظام تسجيل الحضور</h1>
+        <div class="subtitle">شركة الزهراني | Al-Zahrani Company</div>
+    </header>
+
+    <div class="container">
+        <!-- واجهة الموظف -->
+        <section class="employee-section" id="employeeSection">
+            <h2 id="attendanceTitle">تسجيل الحضور | Attendance Registration</h2>
+            <div class="form-group">
+                <label id="nameLabel">اسم الموظف | Employee Name</label>
+                <input type="text" id="employeeName" placeholder="أدخل اسمك الكامل | Enter your full name" autocomplete="off">
+            </div>
+            
+            <div id="cameraContainer">
+                <!-- سيتم إضافة زر التفعيل ديناميكيًا -->
+                <video id="videoElement" autoplay playsinline></video>
+                <div id="cameraError" class="permission-error hidden"></div>
+            </div>
+            <canvas id="canvas"></canvas>
+            
+            <button id="captureBtn">تسجيل الحضور | Register Attendance</button>
+            
+            <div id="attendanceMessage"></div>
+        </section>
+
+        <!-- لوحة التحكم -->
+        <section class="admin-section hidden" id="adminSection">
+            <h2 id="adminTitle">لوحة تحكم المسؤول | Admin Dashboard</h2>
+            
+            <div class="filters">
+                <input type="text" id="filterName" placeholder="تصفية حسب الاسم | Filter by name">
+                <input type="date" id="filterDate" placeholder="تصفية حسب التاريخ | Filter by date">
+            </div>
+            
+            <button id="exportBtn">تصدير إلى Excel | Export to Excel</button>
+            
+            <div class="attendance-list" id="attendanceList">
+                <div class="loading" id="loadingText">جاري تحميل سجلات الحضور... | Loading attendance records...</div>
+            </div>
+        </section>
+        
+        <!-- رابط دخول المسؤول -->
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="#" id="adminLoginLink">دخول المسؤول | Admin Login</a>
+        </div>
+    </div>
+
+    <!-- نافذة عرض التفاصيل -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modalEmployeeName"></h2>
+            <img id="modalEmployeeImage" class="modal-image" src="" alt="صورة الموظف | Employee photo">
+            <div class="modal-details">
+                <p><strong id="dateLabel">تاريخ الحضور:</strong> <span id="modalDateTime"></span></p>
+                <p><strong id="timeLabel">وقت الحضور:</strong> <span id="modalTime"></span></p>
+                <p><strong id="locationLabel">الموقع:</strong> <span id="modalLocation"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYm0l8Q9WwJ_64GYYQW-atR7y8ygJXCwQ",
+            authDomain: "attendance-recording-sys-94413.firebaseapp.com",
+            databaseURL: "https://attendance-recording-sys-94413-default-rtdb.firebaseio.com",
+            projectId: "attendance-recording-sys-94413",
+            storageBucket: "attendance-recording-sys-94413.appspot.com",
+            messagingSenderId: "204650091968",
+            appId: "1:204650091968:web:0d9b02c7c7cf3377eb6425"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // إحداثيات الموقعين المطلوبين
+        const officeLocations = [
+            { lat: 26.435667, lng: 50.087417 }, // 26°26'08.4"N 50°05'14.7"E
+            { lat: 26.435667, lng: 50.087417 }  // 7887 King Khaled St, An Nakhil, EDJA2648, 2648, Dammam 32244
+        ];
+
+        // العناصر الرئيسية
+        const employeeSection = document.getElementById('employeeSection');
+        const adminSection = document.getElementById('adminSection');
+        const adminLoginLink = document.getElementById('adminLoginLink');
+        const videoElement = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const employeeName = document.getElementById('employeeName');
+        const attendanceMessage = document.getElementById('attendanceMessage');
+        const attendanceList = document.getElementById('attendanceList');
+        const filterName = document.getElementById('filterName');
+        const filterDate = document.getElementById('filterDate');
+        const exportBtn = document.getElementById('exportBtn');
+        const cameraError = document.getElementById('cameraError');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const languageSwitch = document.getElementById('languageSwitch');
+        
+        // عناصر نافذة التفاصيل
+        const detailsModal = document.getElementById('detailsModal');
+        const modalEmployeeName = document.getElementById('modalEmployeeName');
+        const modalEmployeeImage = document.getElementById('modalEmployeeImage');
+        const modalDateTime = document.getElementById('modalDateTime');
+        const modalTime = document.getElementById('modalTime');
+        const modalLocation = document.getElementById('modalLocation');
+        const closeModal = document.querySelector('.close-modal');
+
+        // نصوص متعددة اللغات
+        const translations = {
+            en: {
+                attendanceTitle: "Attendance Registration",
+                nameLabel: "Employee Name",
+                namePlaceholder: "Enter your full name",
+                captureBtn: "Register Attendance",
+                adminTitle: "Admin Dashboard",
+                filterName: "Filter by name",
+                filterDate: "Filter by date",
+                exportBtn: "Export to Excel",
+                loadingText: "Loading attendance records...",
+                adminLogin: "Admin Login",
+                dateLabel: "Attendance Date:",
+                timeLabel: "Attendance Time:",
+                locationLabel: "Location:",
+                noRecords: "No attendance records",
+                cameraPermission: "Camera access is required for attendance registration",
+                tryAgain: "Try Again",
+                browserNotSupported: "Browser does not support camera access",
+                enableCamera: "Enable Camera",
+                loadingCamera: "Loading...",
+                attendanceSuccess: "Attendance registered successfully at",
+                errorSaving: "Error saving data:",
+                cameraNotReady: "Camera is not ready, please try again",
+                nameRequired: "Please enter employee name first",
+                exportFileName: "Attendance_Record",
+                noRecordsExport: "No records to export",
+                gettingLocation: "Getting your location...",
+                locationError: "Unable to get your location",
+                inOffice: "Registered in office",
+                outOffice: "Registered outside office",
+                locationNotAvailable: "Location not available"
+            },
+            ar: {
+                attendanceTitle: "تسجيل الحضور",
+                nameLabel: "اسم الموظف",
+                namePlaceholder: "أدخل اسمك الكامل",
+                captureBtn: "تسجيل الحضور",
+                adminTitle: "لوحة تحكم المسؤول",
+                filterName: "تصفية حسب الاسم",
+                filterDate: "تصفية حسب التاريخ",
+                exportBtn: "تصدير إلى Excel",
+                loadingText: "جاري تحميل سجلات الحضور...",
+                adminLogin: "دخول المسؤول",
+                dateLabel: "تاريخ الحضور:",
+                timeLabel: "وقت الحضور:",
+                locationLabel: "الموقع:",
+                noRecords: "لا توجد سجلات حضور",
+                cameraPermission: "يجب السماح باستخدام الكاميرا لتسجيل الحضور",
+                tryAgain: "إعادة المحاولة",
+                browserNotSupported: "المتصفح لا يدعم الوصول إلى الكاميرا",
+                enableCamera: "تفعيل الكاميرا",
+                loadingCamera: "جاري التحميل...",
+                attendanceSuccess: "تم تسجيل الحضور بنجاح في",
+                errorSaving: "حدث خطأ أثناء حفظ البيانات:",
+                cameraNotReady: "الكاميرا غير جاهزة، يرجى المحاولة مرة أخرى",
+                nameRequired: "يرجى إدخال اسم الموظف أولاً",
+                exportFileName: "سجل_الحضور",
+                noRecordsExport: "لا توجد سجلات لتصديرها",
+                gettingLocation: "جاري الحصول على موقعك...",
+                locationError: "تعذر الحصول على موقعك",
+                inOffice: "تم التسجيل داخل المكتب",
+                outOffice: "تم التسجيل خارج المكتب",
+                locationNotAvailable: "الموقع غير متوفر"
+            }
+        };
+
+        let currentLanguage = 'ar';
+
+        // تبديل اللغة
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+            languageSwitch.textContent = currentLanguage === 'ar' ? 'EN' : 'AR';
+            updateTexts();
+        }
+
+        // تحديث النصوص حسب اللغة
+        function updateTexts() {
+            const lang = translations[currentLanguage];
+            
+            document.getElementById('attendanceTitle').textContent = 
+                currentLanguage === 'ar' ? 'تسجيل الحضور | Attendance Registration' : 'Attendance Registration | تسجيل الحضور';
+            
+            document.getElementById('nameLabel').textContent = 
+                currentLanguage === 'ar' ? 'اسم الموظف | Employee Name' : 'Employee Name | اسم الموظف';
+            
+            document.getElementById('adminTitle').textContent = 
+                currentLanguage === 'ar' ? 'لوحة تحكم المسؤول | Admin Dashboard' : 'Admin Dashboard | لوحة تحكم المسؤول';
+            
+            document.getElementById('loadingText').textContent = 
+                currentLanguage === 'ar' ? 'جاري تحميل سجلات الحضور... | Loading attendance records...' : 'Loading attendance records... | جاري تحميل سجلات الحضور...';
+            
+            document.getElementById('adminLoginLink').textContent = 
+                currentLanguage === 'ar' ? 'دخول المسؤول | Admin Login' : 'Admin Login | دخول المسؤول';
+            
+            document.getElementById('locationLabel').textContent = 
+                currentLanguage === 'ar' ? 'الموقع:' : 'Location:';
+            
+            employeeName.placeholder = currentLanguage === 'ar' ? 
+                'أدخل اسمك الكامل | Enter your full name' : 'Enter your full name | أدخل اسمك الكامل';
+            
+            captureBtn.textContent = currentLanguage === 'ar' ? 
+                'تسجيل الحضور | Register Attendance' : 'Register Attendance | تسجيل الحضور';
+            
+            filterName.placeholder = currentLanguage === 'ar' ? 
+                'تصفية حسب الاسم | Filter by name' : 'Filter by name | تصفية حسب الاسم';
+            
+            filterDate.placeholder = currentLanguage === 'ar' ? 
+                'تصفية حسب التاريخ | Filter by date' : 'Filter by date | تصفية حسب التاريخ';
+            
+            exportBtn.textContent = currentLanguage === 'ar' ? 
+                'تصدير إلى Excel | Export to Excel' : 'Export to Excel | تصدير إلى Excel';
+            
+            document.getElementById('dateLabel').textContent = 
+                currentLanguage === 'ar' ? 'تاريخ الحضور:' : 'Attendance Date:';
+            
+            document.getElementById('timeLabel').textContent = 
+                currentLanguage === 'ar' ? 'وقت الحضور:' : 'Attendance Time:';
+        }
+
+        languageSwitch.addEventListener('click', toggleLanguage);
+
+        // تحقق من وقت العمل (السبت إلى الخميس حتى 6 مساءً)
+        function isWorkingTime() {
+            const now = new Date();
+            const day = now.getDay();
+            const hour = now.getHours();
+            return !(day === 5 || hour >= 18);
+        }
+        
+        // تحقق من وقت العمل عند تحميل الصفحة
+        if (!isWorkingTime()) {
+            const message = currentLanguage === 'ar' ? 
+                'نظام تسجيل الحضور متاح فقط من السبت إلى الخميس حتى الساعة 6 مساءً' : 
+                'Attendance system is only available from Saturday to Thursday until 6 PM';
+            employeeSection.innerHTML = `
+                <h2>${currentLanguage === 'ar' ? 'تسجيل الحضور' : 'Attendance Registration'}</h2>
+                <p style="color: var(--primary); text-align: center;">
+                    ${message}
+                </p>
+            `;
+            captureBtn.disabled = true;
+        }
+        
+        // تسجيل الدخول كمسؤول
+        adminLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const username = prompt(currentLanguage === 'ar' ? 'اسم المستخدم:' : 'Username:');
+            const password = prompt(currentLanguage === 'ar' ? 'كلمة المرور:' : 'Password:');
+            
+            if (username === 'علاء' && password === '00') {
+                employeeSection.classList.add('hidden');
+                adminSection.classList.remove('hidden');
+                adminLoginLink.style.display = 'none';
+                loadAttendanceRecords();
+            } else {
+                alert(currentLanguage === 'ar' ? 'بيانات الدخول غير صحيحة!' : 'Invalid login credentials!');
+            }
+        });
+        
+        // بدء تشغيل الكاميرا
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                videoElement.srcObject = stream;
+                videoElement.style.display = 'block';
+                cameraError.classList.add('hidden');
+                return true;
+            } catch (err) {
+                console.error('Camera error:', err);
+                cameraError.innerHTML = `
+                    <p>${translations[currentLanguage].cameraPermission}</p>
+                    <button id="retryCamera" style="background: var(--primary); padding: 8px; border: none; border-radius: 4px; margin-top: 5px; color: white;">
+                        ${translations[currentLanguage].tryAgain}
+                    </button>
+                `;
+                cameraError.classList.remove('hidden');
+                
+                document.getElementById('retryCamera')?.addEventListener('click', startCamera);
+                return false;
+            }
+        }
+
+        // تهيئة الكاميرا بناءً على نوع الجهاز
+        function initCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                cameraError.textContent = translations[currentLanguage].browserNotSupported;
+                cameraError.classList.remove('hidden');
+                return;
+            }
+
+            // على أجهزة الجوال نعرض زر التفعيل
+            if (/Mobi|Android/i.test(navigator.userAgent)) {
+                const enableBtn = document.createElement('button');
+                enableBtn.id = 'enableCameraBtn';
+                enableBtn.textContent = translations[currentLanguage].enableCamera;
+                cameraContainer.prepend(enableBtn);
+                
+                enableBtn.addEventListener('click', async () => {
+                    enableBtn.disabled = true;
+                    enableBtn.textContent = translations[currentLanguage].loadingCamera;
+                    const success = await startCamera();
+                    if (success) {
+                        enableBtn.remove();
+                    } else {
+                        enableBtn.disabled = false;
+                        enableBtn.textContent = translations[currentLanguage].enableCamera;
+                    }
+                });
+            } else {
+                // على أجهزة الكمبيوتر نبدأ الكاميرا تلقائياً
+                startCamera();
+            }
+        }
+
+        // بدء تشغيل الكاميرا عند تحميل الصفحة
+        initCamera();
+
+        // حساب المسافة بين نقطتين جغرافيتين
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // نصف قطر الأرض بالكيلومترات
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c * 1000; // المسافة بالأمتار
+            return distance;
+        }
+
+        // التحقق مما إذا كان الموقع ضمن نطاق المكاتب
+        function isInOfficeLocation(lat, lng) {
+            // نطاق المسافة المسموح بها (100 متر)
+            const allowedDistance = 100;
+            
+            for (const office of officeLocations) {
+                const distance = getDistance(lat, lng, office.lat, office.lng);
+                if (distance <= allowedDistance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // الحصول على الموقع الحالي
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error(translations[currentLanguage].locationError));
+                } else {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            resolve({
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            });
+                        },
+                        (error) => {
+                            reject(new Error(translations[currentLanguage].locationError));
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                }
+            });
+        }
+        
+        // التقاط الصورة وحفظها في Firebase
+        captureBtn.addEventListener('click', async () => {
+            if (!employeeName.value.trim()) {
+                attendanceMessage.innerHTML = `<p style="color: #d32f2f;">${translations[currentLanguage].nameRequired}</p>`;
+                employeeName.focus();
+                return;
+            }
+            
+            if (!videoElement.srcObject) {
+                attendanceMessage.innerHTML = `<p style="color: #d32f2f;">${translations[currentLanguage].cameraNotReady}</p>`;
+                return;
+            }
+            
+            const context = canvas.getContext('2d');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            const now = new Date();
+            const dateTime = now.toLocaleString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+            const timeOnly = now.toLocaleTimeString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+            
+            attendanceMessage.innerHTML = `<p style="color: var(--primary);">${currentLanguage === 'ar' ? 'جاري حفظ بيانات الحضور...' : 'Saving attendance data...'}</p>`;
+            captureBtn.disabled = true;
+            
+            try {
+                // الحصول على الموقع الحالي
+                let locationStatus = translations[currentLanguage].locationNotAvailable;
+                let isInOffice = false;
+                
+                try {
+                    attendanceMessage.innerHTML += `<p style="color: var(--primary);">${translations[currentLanguage].gettingLocation}</p>`;
+                    const currentLocation = await getCurrentLocation();
+                    
+                    isInOffice = isInOfficeLocation(currentLocation.lat, currentLocation.lng);
+                    locationStatus = isInOffice ? translations[currentLanguage].inOffice : translations[currentLanguage].outOffice;
+                } catch (locationError) {
+                    console.error('Location error:', locationError);
+                    locationStatus = translations[currentLanguage].locationError;
+                }
+                
+                const attendanceRef = ref(database, 'attendanceRecords');
+                const newRecordRef = push(attendanceRef);
+                
+                await set(newRecordRef, {
+                    name: employeeName.value.trim(),
+                    dateTime: dateTime,
+                    timeOnly: timeOnly,
+                    timestamp: now.getTime(),
+                    image: imageData,
+                    locationStatus: locationStatus,
+                    isInOffice: isInOffice
+                });
+                
+                attendanceMessage.innerHTML = `
+                    <p style="color: #2e7d32;">
+                        ${translations[currentLanguage].attendanceSuccess} ${dateTime}
+                    </p>
+                    <p class="location-status ${isInOffice ? 'in-office' : 'out-office'}">
+                        ${locationStatus}
+                    </p>
+                `;
+                employeeName.value = '';
+            } catch (error) {
+                console.error('Error saving record:', error);
+                attendanceMessage.innerHTML = `
+                    <p style="color: #d32f2f;">
+                        ${translations[currentLanguage].errorSaving} ${error.message}
+                    </p>
+                `;
+            } finally {
+                captureBtn.disabled = false;
+            }
+        });
+        
+        // تحميل سجلات الحضور من Firebase
+        function loadAttendanceRecords(filterNameValue = '', filterDateValue = '') {
+            attendanceList.innerHTML = `<div class="loading">${translations[currentLanguage].loadingText}</div>`;
+            
+            const attendanceRef = ref(database, 'attendanceRecords');
+            onValue(attendanceRef, (snapshot) => {
+                let records = [];
+                snapshot.forEach(childSnapshot => {
+                    records.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                records.sort((a, b) => b.timestamp - a.timestamp);
+                
+                if (filterNameValue) {
+                    records = records.filter(record => 
+                        record.name.includes(filterNameValue)
+                    );
+                }
+                
+                if (filterDateValue) {
+                    const filterDate = new Date(filterDateValue);
+                    records = records.filter(record => {
+                        const recordDate = new Date(record.timestamp);
+                        return (
+                            recordDate.getFullYear() === filterDate.getFullYear() &&
+                            recordDate.getMonth() === filterDate.getMonth() &&
+                            recordDate.getDate() === filterDate.getDate()
+                        );
+                    });
+                }
+                
+                renderAttendanceList(records);
+            });
+        }
+        
+        // عرض قائمة الحضور
+        function renderAttendanceList(records) {
+            attendanceList.innerHTML = '';
+            
+            if (records.length === 0) {
+                attendanceList.innerHTML = `<p>${translations[currentLanguage].noRecords}</p>`;
+                return;
+            }
+            
+            records.forEach(record => {
+                const item = document.createElement('div');
+                item.className = 'attendance-item';
+                
+                const locationClass = record.isInOffice ? 'in-office' : 'out-office';
+                const locationText = record.locationStatus || translations[currentLanguage].locationNotAvailable;
+                
+                item.innerHTML = `
+                    <div>
+                        <h3>${record.name}</h3>
+                        <p>${record.dateTime}</p>
+                        <p class="location-status ${locationClass}">${locationText}</p>
+                    </div>
+                    <img src="${record.image}" alt="${currentLanguage === 'ar' ? 'صورة الموظف' : 'Employee photo'}" loading="lazy">
+                `;
+                
+                // إضافة حدث النقر لعرض التفاصيل
+                item.addEventListener('click', () => {
+                    showRecordDetails(record);
+                });
+                
+                attendanceList.appendChild(item);
+            });
+        }
+        
+        // عرض تفاصيل السجل في نافذة منبثقة
+        function showRecordDetails(record) {
+            modalEmployeeName.textContent = record.name;
+            modalEmployeeImage.src = record.image;
+            modalDateTime.textContent = record.dateTime.split(',')[0];
+            modalTime.textContent = record.timeOnly || record.dateTime.split(',')[1];
+            
+            const locationClass = record.isInOffice ? 'in-office' : 'out-office';
+            const locationText = record.locationStatus || translations[currentLanguage].locationNotAvailable;
+            modalLocation.innerHTML = `<span class="${locationClass}">${locationText}</span>`;
+            
+            detailsModal.style.display = 'block';
+        }
+        
+        // إغلاق نافذة التفاصيل
+        closeModal.addEventListener('click', () => {
+            detailsModal.style.display = 'none';
+        });
+        
+        // إغلاق النافذة عند النقر خارجها
+        window.addEventListener('click', (e) => {
+            if (e.target === detailsModal) {
+                detailsModal.style.display = 'none';
+            }
+        });
+        
+        // تصدير إلى Excel (CSV) بدون روابط الصور
+        exportBtn.addEventListener('click', () => {
+            attendanceList.innerHTML = `<div class="loading">${currentLanguage === 'ar' ? 'جاري تحضير البيانات للتصدير...' : 'Preparing data for export...'}</div>`;
+            
+            const attendanceRef = ref(database, 'attendanceRecords');
+            onValue(attendanceRef, (snapshot) => {
+                let records = [];
+                snapshot.forEach(childSnapshot => {
+                    records.push(childSnapshot.val());
+                });
+                
+                if (records.length === 0) {
+                    alert(translations[currentLanguage].noRecordsExport);
+                    loadAttendanceRecords();
+                    return;
+                }
+                
+                records.sort((a, b) => b.timestamp - a.timestamp);
+                
+                // عنوان الملف مع التاريخ الحالي
+                const fileName = `${translations[currentLanguage].exportFileName}_${new Date().toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US')}.csv`;
+                
+                // إنشاء محتوى CSV بدون روابط الصور
+                let csvContent = currentLanguage === 'ar' ? 
+                    "اسم الموظف,تاريخ الحضور,وقت الحضور,الموقع\n" : 
+                    "Employee Name,Attendance Date,Attendance Time,Location\n";
+                
+                records.forEach(record => {
+                    const safeName = `"${record.name.replace(/"/g, '""')}"`;
+                    const safeDate = `"${record.dateTime.split(',')[0]}"`;
+                    const safeTime = `"${record.timeOnly || record.dateTime.split(',')[1].trim()}"`;
+                    const safeLocation = `"${record.locationStatus || translations[currentLanguage].locationNotAvailable}"`;
+                    
+                    csvContent += `${safeName},${safeDate},${safeTime},${safeLocation}\n`;
+                });
+                
+                // إنشاء ملف CSV قابل للتنزيل
+                const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                loadAttendanceRecords();
+            }, { onlyOnce: true });
+        });
+        
+        // تطبيق الفلاتر
+        filterName.addEventListener('input', () => {
+            loadAttendanceRecords(filterName.value, filterDate.value);
+        });
+        
+        filterDate.addEventListener('change', () => {
+            loadAttendanceRecords(filterName.value, filterDate.value);
+        });
+
+        // تهيئة النصوص عند تحميل الصفحة
+        updateTexts();
+    </script>
+</body>
+</html>
