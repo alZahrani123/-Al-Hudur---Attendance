@@ -444,7 +444,8 @@
                 locationError: "Unable to get your location",
                 inOffice: "Registered in office",
                 outOffice: "Registered outside office",
-                locationNotAvailable: "Location not available"
+                locationNotAvailable: "Location not available",
+                systemAvailable: "Attendance system is only available from Saturday to Thursday until 7 PM"
             },
             ar: {
                 attendanceTitle: "تسجيل الحضور",
@@ -476,7 +477,8 @@
                 locationError: "تعذر الحصول على موقعك",
                 inOffice: "تم التسجيل داخل المكتب",
                 outOffice: "تم التسجيل خارج المكتب",
-                locationNotAvailable: "الموقع غير متوفر"
+                locationNotAvailable: "الموقع غير متوفر",
+                systemAvailable: "نظام تسجيل الحضور متاح فقط من السبت إلى الخميس حتى الساعة 7 مساءً"
             }
         };
 
@@ -535,23 +537,20 @@
 
         languageSwitch.addEventListener('click', toggleLanguage);
 
-        // تحقق من وقت العمل (السبت إلى الخميس حتى 6 مساءً)
+        // تحقق من وقت العمل (السبت إلى الخميس حتى الساعة 7 مساءً)
         function isWorkingTime() {
             const now = new Date();
             const day = now.getDay();
             const hour = now.getHours();
-            return !(day === 5 || hour >= 18);
+            return !(day === 5 || hour >= 19); // الجمعة (5) أو بعد الساعة 7 مساءً (19)
         }
         
         // تحقق من وقت العمل عند تحميل الصفحة
         if (!isWorkingTime()) {
-            const message = currentLanguage === 'ar' ? 
-                'نظام تسجيل الحضور متاح فقط من السبت إلى الخميس حتى الساعة 6 مساءً' : 
-                'Attendance system is only available from Saturday to Thursday until 6 PM';
             employeeSection.innerHTML = `
                 <h2>${currentLanguage === 'ar' ? 'تسجيل الحضور' : 'Attendance Registration'}</h2>
                 <p style="color: var(--primary); text-align: center;">
-                    ${message}
+                    ${translations[currentLanguage].systemAvailable}
                 </p>
             `;
             captureBtn.disabled = true;
@@ -925,3 +924,4 @@
     </script>
 </body>
 </html>
+
